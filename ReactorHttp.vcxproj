@@ -84,6 +84,8 @@
     <ClCompile Include="Channel.c" />
     <ClCompile Include="ChannelMap.c" />
     <ClCompile Include="EpollDispatcher.c" />
+    <ClCompile Include="PollDispatcher.c" />
+    <ClCompile Include="SelectDispacher.c" />
   </ItemGroup>
   <ItemDefinitionGroup />
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

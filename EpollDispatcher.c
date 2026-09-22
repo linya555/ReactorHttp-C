@@ -138,10 +138,10 @@ static int epolldispatch(struct EventLoop* evloop, int timeout) {
 			//epollRemove(channel,evloop)
 			continue;
 		}
-		if (event & ReadEvent) {
+		if (event & EPOLLIN) {
 			//读事件就绪，开始读相关操作
 		}
-		if (event & WriteEvent) {
+		if (event & EPOLLOUT) {
 			//写事件就绪，开始写相关事件
 		}
 	}
