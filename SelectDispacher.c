@@ -102,10 +102,10 @@ static int SelectDispatch(struct EventLoop* evloop, int timeout) {
 	}
 	for (int i = 0; i < Max; i++) {
 		if (FD_ISSET(i, &rdtemp)) {
-
+			EventActive(i, evloop, ReadEvent);
 		}
 		if (FD_ISSET(i, &wttemp)) {
-
+			EventActive(i, evloop, WriteEvent);
 		}
 	}
 	return 0;

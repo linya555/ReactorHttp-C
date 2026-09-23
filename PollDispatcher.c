@@ -120,10 +120,11 @@ static int Polldispatch(struct EventLoop* evloop, int timeout) {
 		}
 		if (pdata->pfds[i]->revents & POLLIN) {
 			//读事件就绪，开始读相关操作
-
+			EventActive(pdata->pfds[i]->fd, evloop, pdata->pfds[i]->revents);
 		}
 		if (pdata->pfds[i]->revents & POLLOUT) {
 			//写事件就绪，开始写相关事件
+			EventActive(pdata->pfds[i]->fd, evloop, pdata->pfds[i]->revents);
 		}
 	}
 	
