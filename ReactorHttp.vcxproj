@@ -79,6 +79,8 @@
     <ClInclude Include="ChannelMap.h" />
     <ClInclude Include="Dispatcher.h" />
     <ClInclude Include="EventLoop.h" />
+    <ClInclude Include="WorkerThread.h" />
+    <ClInclude Include="ThreadPool.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Channel.c" />
@@ -87,6 +89,8 @@
     <ClCompile Include="EventLoop.c" />
     <ClCompile Include="PollDispatcher.c" />
     <ClCompile Include="SelectDispacher.c" />
+    <ClCompile Include="ThreadPool.c" />
+    <ClCompile Include="WorkerThread.c" />
   </ItemGroup>
   <ItemDefinitionGroup />
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

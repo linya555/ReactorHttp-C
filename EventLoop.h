@@ -49,4 +49,15 @@ int EventActive(int fd, struct EventLoop* eventLoop, int event);
 int EventLoopAddTask(struct Channel* channel, struct EventLoop* evLoop,int type);
 //唤醒子线程函数，通过socketpair，socketpair0给socketpair1传数据，让socketpair1读就绪
 void takeWakeup(struct EventLoop* evLoop);
+//往socketpair1中读数据
 int readLocalMessage(void* arg);
+//从任务队列取任务
+int eventLoopProcessTask(struct EventLoop* evLoop);
+//将取出的任务channel添加到channelmap中，以及将fd添加到IO多路复用对应模型
+int eventLoopAdd(struct EventLoop* evLoop, struct Channel* channel);
+//删除将取出任务的channel中的fd从检测集合中删掉
+int eventLoopRemove(struct EventLoop* evLoop, struct Channel* channel);
+//修改，将原来检测集合里面的文件描述符检查状态修改成现在channel里面的
+int eventLoopModify(struct EventLoop* evLoop, struct Channel* channel);
+//删除channel并释放对应文件描述符
+int destroyChannel(struct EventLoop* evLoop, struct Channel* channel);

@@ -4,6 +4,8 @@
 #include <assert.h>
 #include <sys/types.h>          /* See NOTES */
 #include <sys/socket.h>
+#include <unistd.h>
+
 //写数据
 void takeWakeup(struct EventLoop* evLoop) {
 	const char* msg = "hello world";
@@ -56,6 +58,8 @@ int EventLoopRun(struct EventLoop* eventLoop) {
 	//进行事件循环处理
 	while (eventLoop->isQuit == true) {
 		dispatcher->dispatch(eventLoop, 2);
+		//原因
+		eventLoopProcessTask(eventLoop);
 	}
 	return 0;
 }
@@ -102,12 +106,83 @@ int EventLoopAddTask(struct Channel* channel, struct EventLoop* evLoop, int type
 	*   2. 不能让主线程处理任务队列, 需要由当前的子线程取处理
 	*/
 	if (pthread_self() == evLoop->threadID) {
-
+		eventLoopProcessTask(evLoop);
 	}
 	else {
 		// 主线程 -- 告诉子线程处理任务队列中的任务
-	   // 1. 子线程在工作 2. 子线程被阻塞了:select, poll, epoll
+	    // 1. 子线程在工作 2. 子线程被阻塞了:select, poll, epoll
 		//一旦用这个函数，就会往socketpair0里面写数据，socketpair1就会成为读就绪
 		takeWakeup(evLoop);
 	}
+}
+int eventLoopProcessTask(struct EventLoop* evLoop) {
+	pthread_mutex_lock(&evLoop->mutex);
+	//取出头节点
+	struct ChannelElement* head = evLoop->head;
+	while (head != NULL) {
+		struct ChannelElement* temp = head;
+		if (head->type == ADD) {
+			//增加
+			eventLoopAdd(evLoop, head);
+		}
+		if (head->type == DELETE) {
+			//删除
+			eventLoopRemove(evLoop, head);
+			//还需要把对应的channelmap中的channel释放掉，并关闭文件描述符
+		}
+		if (head->type == MODIFY) {
+			//修改
+			eventLoopModify(evLoop, head);
+		}
+
+		head = head->next;
+		free(temp);
+	}
+	evLoop->head = evLoop->tail = NULL;
+	pthread_mutex_lock(&evLoop->mutex);
+}
+int eventLoopAdd(struct EventLoop* evLoop, struct Channel* channel) {
+	struct ChannelMap* channelmap = evLoop->channelMap;
+	int fd = channel->fd;
+	int ret;
+	//容量不够需要扩容
+	if (fd >= channelmap->size) {
+		if (makeMapRoom(channelmap, fd, sizeof(struct Channel*))==false) {
+			return  -1;
+		}
+	}
+	//找到fd对应的channelmap的数组位置，将channel放进去
+	if (channelmap->list[fd] == NULL) {
+		channelmap->list[fd] = channel;
+		//并将fd加入对应的检测集合里面
+		evLoop->dispatcher->add(channel, evLoop);
+	}
+	return ret;
+}
+int eventLoopRemove(struct EventLoop* evLoop, struct Channel* channel) {
+	struct ChannelMap* channelmap = evLoop->channelMap;
+	int fd = channel->fd;
+	//fd不在检测集合里面
+	//因为每一个channelmap里面的元素都有在eventLoopAdd中被添加到检测集合里面
+	if (fd >= channelmap->size||channelmap->list[fd]==NULL) {
+		return -1;
+	}
+	int ret=evLoop->dispatcher->remove(channel, evLoop);
+	return ret;
+}
+int eventLoopModify(struct EventLoop* evLoop, struct Channel* channel) {
+	struct ChannelMap* channelmap = evLoop->channelMap;
+	int fd = channel->fd;
+	if (fd >= channelmap->size || channelmap->list[fd] == NULL) {
+		return -1;
+	}
+	int ret = evLoop->dispatcher->modify(channel, evLoop);
+	return ret;
+}
+int destroyChannel(struct EventLoop* evLoop, struct Channel* channel) {
+	struct ChannelMap* channelmap = evLoop->channelMap;
+	int fd = channel->fd;
+	channelmap->list[fd] == NULL;
+	close(fd);
+	free(channel);
 }
